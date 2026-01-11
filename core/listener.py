@@ -1,51 +1,45 @@
-import queue
-import sounddevice as sd
 import socket
-import json
-import vosk
+import time
+import speech_recognition as sr
 
-vosk.SetLogLevel(-1)
-model = vosk.Model("models/vosk-model-small-en-us-0.15")
-q = queue.Queue()
+recognizer = sr.Recognizer()
+
 
 def is_connected():
     try:
         socket.create_connection(("8.8.8.8", 53), timeout=2)
         return True
-    except OSError:
+    except:
         return False
 
-def callback(indata, frames, time, status):
-    if status:
-        print(status)
-    q.put(bytes(indata))
 
-def listen():
-    if is_connected():
-        import speech_recognition as sr
-        r = sr.Recognizer()
+def listen(timeout=5, phrase_time_limit=5):
+    """Listen for any speech with timeout."""
+    try:
         with sr.Microphone() as source:
-            print("Listening(online)...")
-            r.adjust_for_ambient_noise(source, duration=0.5)
-            audio = r.listen(source)
-    
-        try:
-            text = r.recognize_google(audio)
-            print("Online:", text)
-            return text.lower()
-        except:
-            return ""
-    else:
-        print("Listening (offline)...")
-        rec = vosk.KaldiRecognizer(model, 16000)
+            recognizer.adjust_for_ambient_noise(source, duration=0.3)
+            audio = recognizer.listen(
+                source, timeout=timeout, phrase_time_limit=phrase_time_limit
+            )
+        text = recognizer.recognize_google(audio)
+        return text.lower()
+    except sr.WaitTimeoutError:
+        return ""
+    except:
+        return ""
 
-        with sd.RawInputStream(samplerate=16000, blocksize=8000, dtype='int16',
-                               channels=1, callback=callback):
-            while True:
-                data = q.get()
-                if rec.AcceptWaveform(data):
-                    result= json.loads(rec.Result())
-                    text = result.get("text", "").strip()
-                    if text:
-                        print("Offline:", text)
-                        return text.lower()
+
+def listen_for_wake_word(wake_word="jarvis"):
+    """Listens until wake word is detected."""
+    print("🟡 Sleeping... Say 'Jarvis' to wake me.")
+
+    while True:
+        text = listen(timeout=4, phrase_time_limit=3)
+        if not text:
+            continue
+
+        print("Heard:", text)
+
+        if wake_word in text:
+            print("🟢 Wake word detected")
+            return True
