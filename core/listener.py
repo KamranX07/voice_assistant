@@ -13,20 +13,26 @@ def is_connected():
         return False
 
 
-def listen(timeout=5, phrase_time_limit=5):
-    """Listen for any speech with timeout."""
+def listen(timeout=5, phrase_time_limit=5, allow_timeout=True):
+    """Listen for speech. Can block or timeout based on allow_timeout."""
     try:
         with sr.Microphone() as source:
             recognizer.adjust_for_ambient_noise(source, duration=0.3)
-            audio = recognizer.listen(
-                source, timeout=timeout, phrase_time_limit=phrase_time_limit
-            )
+            if allow_timeout:
+                audio = recognizer.listen(
+                    source, timeout=timeout, phrase_time_limit=phrase_time_limit
+                )
+            else:
+                audio = recognizer.listen(source)
         text = recognizer.recognize_google(audio)
         return text.lower()
     except sr.WaitTimeoutError:
-        return ""
-    except:
-        return ""
+        return None
+    except sr.UnknownValueError:
+        return None
+    except Exception as e:
+        print("Listen error:", e)
+        return None
 
 
 def listen_for_wake_word(wake_word="jarvis"):
@@ -34,7 +40,7 @@ def listen_for_wake_word(wake_word="jarvis"):
     print("🟡 Sleeping... Say 'Jarvis' to wake me.")
 
     while True:
-        text = listen(timeout=4, phrase_time_limit=3)
+        text = listen(timeout=4, phrase_time_limit=3, allow_timeout=True)
         if not text:
             continue
 

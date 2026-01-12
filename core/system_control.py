@@ -1,7 +1,6 @@
 import os
 import pyautogui
 import psutil
-import pygetwindow as gw
 import win32gui, win32con
 
 def lock_pc():
@@ -45,18 +44,29 @@ def previous_track():
     pyautogui.press("prevtrack")
 
 def get_active_window():
-    try:
-        return gw.getActiveWindow()
-    except:
-        return None
+    return win32gui.GetForegroundWindow()
     
 def minimize_window():
-    win = get_active_window()
-    if win:
-        win.minimize()
+    try:
+        hwnd = get_active_window()
+        win32gui.ShowWindow(hwnd, win32con.SW_MINIMIZE)
+        return True
+    except:
+        return False
+
 
 def maximize_window():
-    win = get_active_window()
-    if win:
-        win.restore()
-        win.maximize()
+    try:
+        hwnd = get_active_window()
+
+        # If minimized → restore first
+        placement = win32gui.GetWindowPlacement(hwnd)
+        show_cmd = placement[1]
+
+        if show_cmd == win32con.SW_SHOWMINIMIZED:
+            win32gui.ShowWindow(hwnd, win32con.SW_RESTORE)
+
+        win32gui.ShowWindow(hwnd, win32con.SW_MAXIMIZE)
+        return True
+    except:
+        return False
