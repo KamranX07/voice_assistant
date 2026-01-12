@@ -198,6 +198,9 @@ def main():
         # ---------- NORMAL COMMAND ----------
         result = handle_command(command)
 
+        if result is None:
+            continue
+
         if isinstance(result, dict) and "type" in result:
 
             if result["type"] == "selection":
@@ -219,6 +222,10 @@ def main():
                 speak(result["message"])
                 state = State.WAITING_FOR_CONFIRMATION
                 continue
+
+        # Handle simple string responses or log unrecognized result types
+        elif isinstance(result, str):
+            speak(result)
 
 
 if __name__ == "__main__":

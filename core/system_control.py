@@ -44,8 +44,8 @@ def previous_track():
     pyautogui.press("prevtrack")
 
 def get_active_window():
-    return win32gui.GetForegroundWindow()
-    
+    hwnd = win32gui.GetForegroundWindow()
+    return hwnd if hwnd else None    
 def minimize_window():
     try:
         hwnd = get_active_window()

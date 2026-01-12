@@ -31,21 +31,18 @@ def find_installed_apps():
 
     for root in roots:
         try:
-            key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, root)
-        except:
-            continue
-
-        for i in range(0, winreg.QueryInfoKey(key)[0]):
-            try:
-                subkey_name = winreg.EnumKey(key, i)
-                subkey = winreg.OpenKey(key, subkey_name)
-                value, _ = winreg.QueryValueEx(subkey, None)
-                exe = os.path.basename(value).lower()
-                found[exe] = value
-            except:
-                pass
-
-    return found
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, root) as key:
+                for i in range(winreg.QueryInfoKey(key)[0]):
+                    try:
+                        subkey_name = winreg.EnumKey(key, i)
+                        with winreg.OpenKey(key, subkey_name) as subkey:
+                            value, _ = winreg.QueryValueEx(subkey, None)
+                            exe = os.path.basename(value).lower()
+                            found[exe] = value
+                    except OSError:
+                        pass
+        except OSError:
+            continue    return found
 
 INSTALLED_APPS = find_installed_apps()
 
